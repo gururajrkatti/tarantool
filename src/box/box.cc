@@ -1343,6 +1343,14 @@ box_index_id_by_name(uint32_t space_id, const char *name, uint32_t len)
 }
 /** \endcond public */
 
+static inline bool
+memtx_space_is_recovering(struct space *space)
+{
+	assert(space_is_memtx(space));
+	struct memtx_engine *memtx = (struct memtx_engine *)space->engine;
+	return memtx->state < MEMTX_FINAL_RECOVERY;
+}
+
 int
 box_process1(struct request *request, box_tuple_t **result)
 {
@@ -1354,6 +1362,24 @@ box_process1(struct request *request, box_tuple_t **result)
 	    space_group_id(space) != GROUP_LOCAL &&
 	    box_check_writable() != 0)
 		return -1;
+	if (space_is_memtx(space)) {
+		/*
+		 * Due to on_init_schema triggers set on system spaces,
+		 * we can insert data during recovery to local and temporary
+		 * spaces. However, until recovery is finished, we can't
+		 * check key uniqueness (since index are still not yet built).
+		 * So reject any attempts to write into these spaces.
+		 */
+		if (memtx_space_is_recovering(space)) {
+			diag_set(ClientError, ER_UNSUPPORTED, "Write requests",
+				"during snapshot recovery, use "
+				"box.runtime_info.is_recovery_finished() "
+				"to check that snapshot recovery was completed");
+			diag_log();
+			return -1;
+		}
+	}
+
 	return box_process_rw(request, space, result);
 }
 
