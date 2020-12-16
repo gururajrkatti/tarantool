@@ -21,7 +21,6 @@ ffi.cdef[[
 int kill(int pid, int sig);
 int isatty(int fd);
 int getppid(void);
-int system(const char *command);
 ]]
 
 local TIMEOUT_INFINITY = 100 * 365 * 86400
@@ -529,7 +528,7 @@ local function start()
         os.exit(1)
     end
     local pid = start_check()
-    if pid and ffi.C.system("ps -p " .. pid .. " -o stat | tail -n 1 | grep 'Z'") ~= 0 then
+    if pid then
         log.error("The daemon is already running: PID %s", pid)
         os.exit(1)
     end
