@@ -114,20 +114,8 @@ fiber.sleep(3);
 stop = true;
  | ---
  | ...
-
-function read_from_channel()
-    for i = 1, ch:size() do
-        local ret = fiber.create(function()
-            local ok, err = pcall(ch:get())
-            if ok == false then
-                require('log').error("error: ch:get() failed with error " .. err)
-                return false
-            end
-            return true
-        end)
-        if ret == false then return false end
-    end
-    return true
+for i = 1, ch:size() do
+    ch:get()
 end;
  | ---
  | ...
@@ -136,17 +124,11 @@ test_run:cmd("setopt delimiter ''");
  | ---
  | - true
  | ...
-
-read_from_channel()
+assert(box.stat.vinyl().scheduler.dump_count > 0)
  | ---
  | - true
  | ...
-
-assert(test_run:wait_cond(function() return box.stat.vinyl().scheduler.dump_count > 0 end))
- | ---
- | - true
- | ...
-assert(test_run:wait_cond(function() return s.index.i1 ~= nil end))
+assert(s.index.i1 ~= nil)
  | ---
  | - true
  | ...
