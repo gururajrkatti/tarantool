@@ -28,6 +28,17 @@ jobs:
         compiler: clang
       - name: "Debug build + test + coverage (Linux, gcc)"
         env: TARGET=coverage
+      # Power jobs
+      - name: "RelWithDebInfo build + test (Linux, gcc)"
+        env: TARGET=test
+        arch: ppc64le
+      - name: "RelWithDebInfo build + test (Linux, clang)"
+        env: TARGET=test
+        compiler: clang
+        arch: ppc64le
+      - name: "Debug build + test + coverage (Linux, gcc)"
+        env: TARGET=coverage
+        arch: ppc64le
 
 script:
   - make -f .travis.mk ${TARGET}
